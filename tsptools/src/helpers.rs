@@ -106,9 +106,12 @@ pub fn tour_len(path: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>) -> i32 {
     len + distance_matrix[path[0]][path[path.len() - 1]]
 }
 
-pub fn random_solution(node_count: usize, seed: Option<u64>) -> Vec<usize> {
-    let mut nodes_remaining: Vec<usize> = (0..node_count).collect();
-    let mut starting_path = vec![];
+pub fn random_solution(node_count: usize, seed: Option<u64>, preserve_first: bool) -> Vec<usize> {
+    let (mut nodes_remaining, mut path) = if preserve_first {
+        ((1..node_count).collect::<Vec<usize>>(), vec![0])
+    } else {
+        ((0..node_count).collect(), vec![])
+    };
 
     let mut rng = match seed {
         Some(seed) => ChaCha8Rng::seed_from_u64(seed),
@@ -118,11 +121,11 @@ pub fn random_solution(node_count: usize, seed: Option<u64>) -> Vec<usize> {
     while !nodes_remaining.is_empty() {
         let between = Uniform::from(0..nodes_remaining.len());
         let i = between.sample(&mut rng);
-        starting_path.push(nodes_remaining[i]);
+        path.push(nodes_remaining[i]);
         nodes_remaining.remove(i);
     }
 
-    starting_path
+    path
 }
 
 pub fn nodes_to_ids(path: &[Node]) -> Vec<usize> {

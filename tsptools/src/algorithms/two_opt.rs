@@ -1,11 +1,11 @@
 use crate::helpers::*;
 
-pub fn two_opt_random(distance_matrix: &Vec<Vec<i32>>, seed: Option<u64>) -> (Vec<usize>, i32) {
-    let starting_tour = random_solution(distance_matrix.len(), seed);
-    two_opt(&starting_tour, distance_matrix)
+pub fn two_opt_random(distance_matrix: &Vec<Vec<i32>>, seed: Option<u64>, preserve_first:bool) -> (Vec<usize>, i32) {
+    let starting_tour = random_solution(distance_matrix.len(), seed, preserve_first);
+    two_opt(&starting_tour, distance_matrix, preserve_first)
 }
 
-pub fn two_opt(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>) -> (Vec<usize>, i32) {
+pub fn two_opt(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>, preserve_first:bool) -> (Vec<usize>, i32) {
     let mut tour = starting_tour.to_owned();
     let n = tour.len();
     let mut improvement = true;
@@ -16,7 +16,12 @@ pub fn two_opt(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>) -> (
         let mut a = 0;
         let mut b = 0;
 
-        for i in 0..(n - 1) {
+        let start = match preserve_first {
+            true => 1,
+            false => 0,
+        };
+
+        for i in start..(n - 1) {
             for j in (i + 1)..n {
                 let distance = distance_matrix[tour[i]][tour[j]]
                     + distance_matrix[tour[i + 1]][tour[(j + 1) % n]]
