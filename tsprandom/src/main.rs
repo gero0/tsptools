@@ -1,4 +1,6 @@
 use std::{
+    fs::File,
+    io::Write,
     sync::Mutex,
     thread::{self, available_parallelism},
 };
@@ -19,7 +21,6 @@ fn main() {
 
     let samples_per_thread = SAMPLE_COUNT / thread_count;
 
-    let distance_matrix = file.distance_matrix;
     let local_minimums = Mutex::new(FxHashMap::<Vec<usize>, (i32, i32)>::default());
     let visited_starting = Mutex::new(FxHashSet::default());
 
@@ -29,7 +30,7 @@ fn main() {
                 sample(
                     samples_per_thread,
                     MAX_RETRIES,
-                    &distance_matrix,
+                    &file.distance_matrix,
                     &local_minimums,
                     &visited_starting,
                 );
@@ -37,9 +38,10 @@ fn main() {
         }
     });
 
-    for e in visited_starting.into_inner().unwrap() {
-        println!("{:?}", e);
-    }
+    save_results(
+        &local_minimums.into_inner().unwrap(),
+        &visited_starting.into_inner().unwrap(),
+    );
 }
 
 fn sample(
@@ -94,4 +96,29 @@ fn find_starting_point(
     visited_set.insert(starting_solution.clone());
 
     Some(starting_solution)
+}
+
+fn save_results(
+    local_minimums: &FxHashMap<Vec<usize>, (i32, i32)>,
+    visited_starting: &FxHashSet<Vec<usize>>,
+) {
+    let mut lo_file = File::create("local_optime.txt").expect("Could not create file!");
+    let mut starting_points_file =
+        File::create("starting_points.txt").expect("Could not create file!");
+
+    starting_points_file.write("tour\n".as_bytes()).unwrap();
+    for e in visited_starting {
+        starting_points_file
+            .write_fmt(format_args!("{:?}\n", e))
+            .unwrap();
+    }
+
+    lo_file
+        .write("tour;tour_len;related_starting_points\n".as_bytes())
+        .unwrap();
+    for (tour, (len, sp)) in local_minimums {
+        lo_file
+            .write_fmt(format_args!("{:?};{};{}\n", tour, len, sp))
+            .unwrap();
+    }
 }
