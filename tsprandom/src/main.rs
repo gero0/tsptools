@@ -14,7 +14,7 @@ fn main() {
     let file = parse_tsp_file("./data/ulysses16.tsp").unwrap();
 
     const SAMPLE_COUNT: usize = 1000000;
-    const MAX_RETRIES: usize = 100;
+    const MAX_RETRIES: usize = 10000;
 
     let thread_count: usize = available_parallelism().unwrap().get();
     println!("{} threads available", thread_count);
@@ -38,10 +38,10 @@ fn main() {
         }
     });
 
-    save_results(
-        &local_minimums.into_inner().unwrap(),
-        &visited_starting.into_inner().unwrap(),
-    );
+    let local_minimums = local_minimums.into_inner().unwrap();
+    let visited_starting = visited_starting.into_inner().unwrap();
+
+    save_results(&local_minimums, &visited_starting);
 }
 
 fn sample(
@@ -58,7 +58,7 @@ fn sample(
         }
         let starting_solution = starting_solution.unwrap();
 
-        let (hillclimb_tour, hillclimb_len) = hillclimb(&starting_solution, distance_matrix);
+        let (hillclimb_tour, hillclimb_len) = hillclimb(&starting_solution, distance_matrix, true);
 
         let mut map = local_minimums.lock().expect("Mutex poisoned, bailing out!");
 
@@ -82,7 +82,7 @@ fn find_starting_point(
         .lock()
         .expect("Mutex poisoned, bailing out!");
 
-    let mut starting_solution = random_solution(distance_matrix.len(), None);
+    let mut starting_solution = random_solution(distance_matrix.len(), None, true);
     let mut retries = 0;
     while visited_set.contains(&starting_solution) {
         retries += 1;
@@ -90,7 +90,7 @@ fn find_starting_point(
             //can't find any new starting points, end thread
             return None;
         }
-        starting_solution = random_solution(distance_matrix.len(), None);
+        starting_solution = random_solution(distance_matrix.len(), None, true);
     }
 
     visited_set.insert(starting_solution.clone());
@@ -102,9 +102,9 @@ fn save_results(
     local_minimums: &FxHashMap<Vec<usize>, (i32, i32)>,
     visited_starting: &FxHashSet<Vec<usize>>,
 ) {
-    let mut lo_file = File::create("local_optime.txt").expect("Could not create file!");
+    let mut lo_file = File::create("local_optima.csv").expect("Could not create file!");
     let mut starting_points_file =
-        File::create("starting_points.txt").expect("Could not create file!");
+        File::create("starting_points.csv").expect("Could not create file!");
 
     starting_points_file.write("tour\n".as_bytes()).unwrap();
     for e in visited_starting {
@@ -116,9 +116,9 @@ fn save_results(
     lo_file
         .write("tour;tour_len;related_starting_points\n".as_bytes())
         .unwrap();
-    for (tour, (len, sp)) in local_minimums {
+    for (i, (tour, (len, sp))) in local_minimums.iter().enumerate() {
         lo_file
-            .write_fmt(format_args!("{:?};{};{}\n", tour, len, sp))
+            .write_fmt(format_args!("{};{:?};{};{}\n", i, tour, *len, *sp))
             .unwrap();
     }
 }
