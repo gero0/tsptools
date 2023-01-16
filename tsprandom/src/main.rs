@@ -1,25 +1,53 @@
 use std::{
+    env,
     fs::File,
     io::Write,
+    process::Command,
     sync::Mutex,
     thread::{self, available_parallelism},
 };
 
 use rustc_hash::{FxHashMap, FxHashSet};
 use tsptools::{
-    algorithms::hillclimb::hillclimb, helpers::random_solution, parsers::parse_tsp_file,
+    algorithms::{hillclimb::hillclimb, two_opt::two_opt},
+    helpers::random_solution,
+    parsers::parse_tsp_file,
 };
 
-fn main() {
-    let file = parse_tsp_file("./data/ulysses16.tsp").unwrap();
+type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize>, i32);
 
-    const SAMPLE_COUNT: usize = 1000000;
-    const MAX_RETRIES: usize = 10000;
+fn main() {
+    let path = env::args().nth(1).expect("No path to input data given!");
+    if path == "--help" || path == "-h" || path == "help"{
+        println!("Usage: tsprandom <path to tsp file> <algorithm> [sample_count (default 10000)] [max_retries (default 10000)]");
+        println!("Supported algorithms: hc, 2opt");
+        return;
+    }
+    let alg = env::args()
+        .nth(2)
+        .expect("Algorithm param required (hc or 2opt)");
+    let sample_count: usize = match env::args().nth(3) {
+        Some(n) => n.parse().expect("Invalid sample count argument"),
+        None => 10000,
+    };
+
+    let max_retries: usize = match env::args().nth(4) {
+        Some(n) => n.parse().expect("Invalid max_retries argument"),
+        None => 10000,
+    };
+
+    let file = parse_tsp_file(&path).unwrap();
+
+    let algorithm = match alg.as_str() {
+        "hc" => hillclimb,
+        "2opt" => two_opt,
+        _ => panic!("Invalid algorithm param"),
+    };
 
     let thread_count: usize = available_parallelism().unwrap().get();
     println!("{} threads available", thread_count);
 
-    let samples_per_thread = SAMPLE_COUNT / thread_count;
+    let samples_per_thread = sample_count / thread_count;
 
     let local_minimums = Mutex::new(FxHashMap::<Vec<usize>, (i32, i32)>::default());
     let visited_starting = Mutex::new(FxHashSet::default());
@@ -29,10 +57,11 @@ fn main() {
             s.spawn(|| {
                 sample(
                     samples_per_thread,
-                    MAX_RETRIES,
+                    max_retries,
                     &file.distance_matrix,
                     &local_minimums,
                     &visited_starting,
+                    &algorithm,
                 );
             });
         }
@@ -41,7 +70,7 @@ fn main() {
     let local_minimums = local_minimums.into_inner().unwrap();
     let visited_starting = visited_starting.into_inner().unwrap();
 
-    save_results(&local_minimums, &visited_starting);
+    save_results(&local_minimums, &visited_starting, &alg);
 }
 
 fn sample(
@@ -50,6 +79,7 @@ fn sample(
     distance_matrix: &Vec<Vec<i32>>,
     local_minimums: &Mutex<FxHashMap<Vec<usize>, (i32, i32)>>,
     visited_starting: &Mutex<FxHashSet<Vec<usize>>>,
+    hc: &HillclimbFunction,
 ) {
     for _ in 0..sample_count {
         let starting_solution = find_starting_point(visited_starting, distance_matrix, max_retries);
@@ -58,7 +88,7 @@ fn sample(
         }
         let starting_solution = starting_solution.unwrap();
 
-        let (hillclimb_tour, hillclimb_len) = hillclimb(&starting_solution, distance_matrix, true);
+        let (hillclimb_tour, hillclimb_len) = (hc)(&starting_solution, distance_matrix, true);
 
         let mut map = local_minimums.lock().expect("Mutex poisoned, bailing out!");
 
@@ -101,10 +131,14 @@ fn find_starting_point(
 fn save_results(
     local_minimums: &FxHashMap<Vec<usize>, (i32, i32)>,
     visited_starting: &FxHashSet<Vec<usize>>,
+    alg_name: &str,
 ) {
-    let mut lo_file = File::create("local_optima.csv").expect("Could not create file!");
-    let mut starting_points_file =
-        File::create("starting_points.csv").expect("Could not create file!");
+    let dt = chrono::offset::Local::now().to_string();
+    let lopath = format!("{}_local_optima_{}.csv", alg_name, dt);
+    let sppath = format!("{}_starting_points_{}.csv", alg_name, dt);
+
+    let mut lo_file = File::create(&lopath).expect("Could not create file!");
+    let mut starting_points_file = File::create(&sppath).expect("Could not create file!");
 
     starting_points_file.write("tour\n".as_bytes()).unwrap();
     for e in visited_starting {
@@ -120,5 +154,19 @@ fn save_results(
         lo_file
             .write_fmt(format_args!("{};{:?};{};{}\n", i, tour, *len, *sp))
             .unwrap();
+    }
+
+    let output = Command::new("python3")
+        .args(["vis.py", &lopath, "local_optima_hillclimb_graph"])
+        .output();
+    match output {
+        Ok(output) => match output.status.success() {
+            true => println!("Plot saved!"),
+            false => println!(
+                "Python drawing module returned an error!: {:?}",
+                output.stdout
+            ),
+        },
+        Err(_) => println!("Failed to run python process!"),
     }
 }

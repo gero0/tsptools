@@ -1,6 +1,7 @@
 from colorsys import hsv_to_rgb
 from pyvis.network import Network
 from operator import itemgetter
+import sys
 
 def cmp_permutations(perm1, perm2):
     # invert first permutation
@@ -27,7 +28,11 @@ nodes = []
 
 N = 40
 
-with open("local_optima.csv") as f:
+if len(sys.argv) < 2:
+    print("Pass input file name as parameter")
+    raise Exception
+
+with open(sys.argv[1]) as f:
     lines = f.readlines()
     for i, line in enumerate(lines[1:]):
         tokens = line.split(";")
@@ -77,4 +82,10 @@ for i, node in enumerate(best_nodes[1:]):
 
 
 net.toggle_physics(True)
-net.show("mygraph.html")
+
+name = "local_optima_graph"
+
+if len(sys.argv) > 2:
+    name = sys.argv[2]
+
+net.write_html(f'{name}.html', local=True, notebook=False)
