@@ -47,6 +47,9 @@ nodes.sort(key=itemgetter(2))
 
 net = Network()
 
+if len(nodes) < N:
+    N = len(nodes)
+
 best_nodes = nodes[0:N]
 
 min_val = min(map(itemgetter(2), best_nodes))
