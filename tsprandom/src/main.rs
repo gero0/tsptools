@@ -1,5 +1,4 @@
 use std::{
-    cmp::Ordering,
     env,
     fs::File,
     io::Write,
@@ -114,7 +113,10 @@ fn main() {
     let cor = cov as f32 / (std_d * std_h);
 
     println!("Mean distance:{}, Mean height difference:{}", ed, eh);
-    println!("std dev. of distance:{}, std dev. of height diff:{}", std_d, std_h);
+    println!(
+        "std dev. of distance:{}, std dev. of height diff:{}",
+        std_d, std_h
+    );
     println!("Covariance: {}\nCorrelation:{}", cov, cor);
 }
 
