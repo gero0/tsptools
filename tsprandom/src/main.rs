@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     env,
     fs::File,
     io::Write,
@@ -10,7 +11,7 @@ use std::{
 use rustc_hash::{FxHashMap, FxHashSet};
 use tsptools::{
     algorithms::{hillclimb::hillclimb, two_opt::two_opt},
-    helpers::random_solution,
+    helpers::{cmp_permutations, random_solution},
     parsers::parse_tsp_file,
 };
 
@@ -18,7 +19,7 @@ type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize
 
 fn main() {
     let path = env::args().nth(1).expect("No path to input data given!");
-    if path == "--help" || path == "-h" || path == "help"{
+    if path == "--help" || path == "-h" || path == "help" {
         println!("Usage: tsprandom <path to tsp file> <algorithm> [sample_count (default 10000)] [max_retries (default 10000)]");
         println!("Supported algorithms: hc, 2opt");
         return;
@@ -70,7 +71,51 @@ fn main() {
     let local_minimums = local_minimums.into_inner().unwrap();
     let visited_starting = visited_starting.into_inner().unwrap();
 
+    println!("Saving results...");
     save_results(&local_minimums, &visited_starting, &alg);
+    println!("Calculating stats");
+
+    //sort local minimums to find the one with lowest path len
+    let mut minimums: Vec<_> = local_minimums
+        .into_iter()
+        .map(|(k, v)| (k, v.0, v.1))
+        .collect();
+
+    minimums.sort_by(|a, b| a.1.cmp(&b.1));
+    //calculate distances from node to best node and height differences between them
+    let mut distances = vec![0; minimums.len() - 1];
+    let mut height_diff = vec![0; minimums.len() - 1];
+
+    let best = &minimums[0];
+    for i in 1..minimums.len() {
+        distances[i - 1] = cmp_permutations(&best.0, &minimums[i].0);
+        height_diff[i - 1] = (minimums[i].1 - best.1) as u32;
+    }
+
+    //expected values
+    let ed = distances.iter().sum::<u32>() / distances.len() as u32;
+    let eh = height_diff.iter().sum::<u32>() / height_diff.len() as u32;
+    //expected value of products of the two variables
+    let ep = distances
+        .iter()
+        .zip(&height_diff)
+        .map(|(a, b)| a * b)
+        .sum::<u32>()
+        / distances.len() as u32;
+    //calculate covariance
+    let cov = ep - (ed * eh);
+
+    let mean_d_squared = distances.iter().map(|x| x * x).sum::<u32>() / distances.len() as u32;
+    let mean_h_squared = height_diff.iter().map(|x| x * x).sum::<u32>() / height_diff.len() as u32;
+
+    let std_d = ((mean_d_squared - (ed * ed)) as f32).sqrt();
+    let std_h = ((mean_h_squared - (eh * eh)) as f32).sqrt();
+
+    let cor = cov as f32 / (std_d * std_h);
+
+    println!("Mean distance:{}, Mean height difference:{}", ed, eh);
+    println!("std dev. of distance:{}, std dev. of height diff:{}", std_d, std_h);
+    println!("Covariance: {}\nCorrelation:{}", cov, cor);
 }
 
 fn sample(
@@ -148,7 +193,7 @@ fn save_results(
     }
 
     lo_file
-        .write("tour;tour_len;related_starting_points\n".as_bytes())
+        .write("id;tour;tour_len;related_starting_points\n".as_bytes())
         .unwrap();
     for (i, (tour, (len, sp))) in local_minimums.iter().enumerate() {
         lo_file
