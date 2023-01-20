@@ -70,17 +70,16 @@ fn main() {
     let local_minimums = local_minimums.into_inner().unwrap();
     let visited_starting = visited_starting.into_inner().unwrap();
 
-    println!("Saving results...");
-    save_results(&local_minimums, &visited_starting, &alg);
-    println!("Calculating stats");
-
-    //sort local minimums to find the one with lowest path len
     let mut minimums: Vec<_> = local_minimums
         .into_iter()
         .map(|(k, v)| (k, v.0, v.1))
         .collect();
-
     minimums.sort_by(|a, b| a.1.cmp(&b.1));
+
+    println!("Saving results...");
+    save_results(&minimums, &visited_starting, &alg);
+
+    println!("Calculating stats");
     //calculate distances from node to best node and height differences between them
     let mut distances = vec![0; minimums.len() - 1];
     let mut height_diff = vec![0; minimums.len() - 1];
@@ -176,7 +175,7 @@ fn find_starting_point(
 }
 
 fn save_results(
-    local_minimums: &FxHashMap<Vec<usize>, (i32, i32)>,
+    local_minimums: &Vec<(Vec<usize>, i32, i32)>,
     visited_starting: &FxHashSet<Vec<usize>>,
     alg_name: &str,
 ) {
@@ -197,7 +196,7 @@ fn save_results(
     lo_file
         .write("id;tour;tour_len;related_starting_points\n".as_bytes())
         .unwrap();
-    for (i, (tour, (len, sp))) in local_minimums.iter().enumerate() {
+    for (i, (tour, len, sp)) in local_minimums.iter().enumerate() {
         lo_file
             .write_fmt(format_args!("{};{:?};{};{}\n", i, tour, *len, *sp))
             .unwrap();

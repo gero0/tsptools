@@ -43,8 +43,6 @@ with open(sys.argv[1]) as f:
 
         nodes.append((id, tour, val, sp))
 
-nodes.sort(key=itemgetter(2))
-
 net = Network()
 
 if len(nodes) < N:
@@ -52,7 +50,7 @@ if len(nodes) < N:
 
 best_nodes = nodes[0:N]
 
-min_val = min(map(itemgetter(2), best_nodes))
+min_val = best_nodes[0][2]
 max_val = max(map(itemgetter(2), best_nodes))
 
 min_sp = min(map(itemgetter(3), best_nodes))
@@ -84,10 +82,6 @@ for i, node in enumerate(best_nodes):
 
     if(i!=0):
         net.add_edge(0, i, label=str(swap_cnt), color="#888888")
-
-# for i, node in enumerate(best_nodes[1:]):
-#     swap_cnt = cmp_permutations(best_nodes[0][1], node[1])
-#     net.add_edge(0, i+1, label=str(swap_cnt), color="#888888")
 
 net.toggle_physics(True)
 
