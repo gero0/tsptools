@@ -51,7 +51,7 @@ if len(nodes) < N:
 best_nodes = nodes[0:N]
 
 min_val = best_nodes[0][2]
-max_val = max(map(itemgetter(2), best_nodes))
+max_val = best_nodes[-1][2]
 
 min_sp = min(map(itemgetter(3), best_nodes))
 max_sp = max(map(itemgetter(3), best_nodes))
