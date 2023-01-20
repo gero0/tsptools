@@ -71,18 +71,23 @@ for i, node in enumerate(best_nodes):
     else:
         label = str(node[2])
 
+    swap_cnt = cmp_permutations(best_nodes[0][1], node[1])
+
     net.add_node(
         i,
         label=label,
         title=f"Tour: {node[1]}, Tour len: {node[2]}, {node[3]} starting points led to this LO",
         size=(node[3] / max_sp) * base_size,
         color="#%02x%02x%02x" % rgb,
+        mass=swap_cnt / 4
     )
 
-for i, node in enumerate(best_nodes[1:]):
-    swap_cnt = cmp_permutations(best_nodes[0][1], node[1])
-    net.add_edge(0, i+1, label=str(swap_cnt), color="#888888")
+    if(i!=0):
+        net.add_edge(0, i, label=str(swap_cnt), color="#888888")
 
+# for i, node in enumerate(best_nodes[1:]):
+#     swap_cnt = cmp_permutations(best_nodes[0][1], node[1])
+#     net.add_edge(0, i+1, label=str(swap_cnt), color="#888888")
 
 net.toggle_physics(True)
 
