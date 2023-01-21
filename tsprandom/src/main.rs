@@ -14,10 +14,12 @@ use tsptools::{
     parsers::parse_tsp_file,
 };
 
-
 mod simpleparser;
-use plotly::{common::{Mode, Title}, Plot, Scatter, Layout, layout::Axis};
-
+use plotly::{
+    common::{Mode, Title},
+    layout::Axis,
+    Layout, Plot, Scatter,
+};
 
 type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize>, i32);
 
@@ -31,7 +33,12 @@ fn main() {
 
     let (alg, sample_count, max_retries) = get_args();
 
-    let file = parse_tsp_file(&path).unwrap();
+    let distance_matrix = if path.ends_with(".txt") {
+        simpleparser::parse_simple(&path).expect("Could not parse input file")
+    } else {
+        let file = parse_tsp_file(&path).unwrap();
+        file.distance_matrix
+    };
 
     let algorithm = match alg.as_str() {
         "hc" => hillclimb,
@@ -53,7 +60,7 @@ fn main() {
                 sample(
                     samples_per_thread,
                     max_retries,
-                    &file.distance_matrix,
+                    &distance_matrix,
                     &local_minimums,
                     &visited_starting,
                     &algorithm,
@@ -238,12 +245,9 @@ fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>, alg_name: &str
 
 fn plot_corr(distances: &Vec<u64>, height_diff: &Vec<u64>, alg_name: &str) {
     let layout = Layout::new()
-    .x_axis(
-        Axis::new()
-            .title(Title::new("Distance from best solution"))
-    )
-    .y_axis(Axis::new().title(Title::new("Difference from best solution")));
-    
+        .x_axis(Axis::new().title(Title::new("Distance from best solution")))
+        .y_axis(Axis::new().title(Title::new("Difference from best solution")));
+
     let mut plot = Plot::new();
     let trace = Scatter::new(distances.to_vec(), height_diff.to_vec()).mode(Mode::Markers);
     plot.add_trace(trace);

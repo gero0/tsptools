@@ -9,8 +9,8 @@ impl Display for ParseError {
 }
 impl Error for ParseError {}
 
-fn parse_simple(path: &str) -> Result<Vec<Vec<i32>>, Box<dyn Error>> {
-    let file = fs::read_to_string("address.txt")?;
+pub fn parse_simple(path: &str) -> Result<Vec<Vec<i32>>, Box<dyn Error>> {
+    let file = fs::read_to_string(path)?;
     let mut lines = file.lines();
     let n: usize = lines.next().ok_or(ParseError)?.parse()?;
 

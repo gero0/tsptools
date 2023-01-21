@@ -12,22 +12,17 @@ with open(sys.argv[1]) as f:
     n = int(lines[0])
     for i, line in enumerate(lines[1:n+1]):
         row = []
-        tokens = line.split(" ")
+        tokens = line.split("\t")
         for token in tokens:
             row.append(int(token))
         dist_matrix.append(row)
 
 net = Network()
 
-for i in range(0, n):
-    net.add_node(i, label=str(i), shape='circle')
+net.add_node(0, label="0", shape="circle")
 
-for i in range(0, n):
-    for j in range(0, n):
-        if(i==j):
-            continue
-        net.add_edge(i, j, label=str(dist_matrix[i][j]))
-        # value=dist_matrix[i][j],
+for i in range(1, n):
+    net.add_node(i, label=str(i), shape='circle', mass=dist_matrix[0][i] / 2)
 
 net.toggle_physics(False)
 net.save_graph('cities_vis.html')
