@@ -14,8 +14,10 @@ use tsptools::{
     parsers::parse_tsp_file,
 };
 
-use plotly::{Plot, Scatter, common::Mode};
+
 mod simpleparser;
+use plotly::{common::{Mode, Title}, Plot, Scatter, Layout, layout::Axis};
+
 
 type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize>, i32);
 
@@ -70,7 +72,7 @@ fn main() {
     local_minimums.sort_by(|a, b| a.1.cmp(&b.1));
 
     println!("Calculating stats");
-    calculcate_stats(&local_minimums);
+    calculcate_stats(&local_minimums, &alg);
 
     println!("Saving results...");
     save_results(&local_minimums, &visited_starting, &alg);
@@ -191,7 +193,7 @@ fn save_results(
     }
 }
 
-fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>) {
+fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>, alg_name: &str) {
     //calculate distances from node to best node and height differences between them
     let mut distances = vec![0; local_minimums.len() - 1];
     let mut height_diff = vec![0; local_minimums.len() - 1];
@@ -203,7 +205,7 @@ fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>) {
     }
 
     println!("Plotting...");
-    plot_corr(&distances, &height_diff);
+    plot_corr(&distances, &height_diff, alg_name);
 
     //expected values
     let ed = distances.iter().sum::<u64>() / distances.len() as u64;
@@ -234,10 +236,21 @@ fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>) {
     println!("Covariance: {}\nCorrelation:{}", cov, cor);
 }
 
-fn plot_corr(distances: &Vec<u64>, height_diff: &Vec<u64>) {
+fn plot_corr(distances: &Vec<u64>, height_diff: &Vec<u64>, alg_name: &str) {
+    let layout = Layout::new()
+    .x_axis(
+        Axis::new()
+            .title(Title::new("Distance from best solution"))
+    )
+    .y_axis(Axis::new().title(Title::new("Difference from best solution")));
+    
     let mut plot = Plot::new();
     let trace = Scatter::new(distances.to_vec(), height_diff.to_vec()).mode(Mode::Markers);
     plot.add_trace(trace);
+    plot.set_layout(layout);
     plot.use_local_plotly();
-    plot.write_html("out.html");
+
+    let dt = chrono::offset::Local::now().to_string();
+    let path = format!("{}_corr_{}.html", alg_name, dt);
+    plot.write_html(path);
 }
