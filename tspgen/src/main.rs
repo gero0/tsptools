@@ -74,11 +74,11 @@ fn main() {
         }
     }
     if help {
-        println!("Usage: tspgen -s <size> [-d <density>] [-r <seed>] [-c] [-l]");
+        println!("Usage: tspgen -s <size> [-o <filename>] [-d <density>] [-r <seed>] [-c] [-l]");
         return;
     }
     if size == 0 {
-        panic!("Usage: tspgen -s <size> [-d <density>] [-r <seed>] [-c] [-l]");
+        panic!("Usage: tspgen -s <size> [-o <filename>] [-d <density>] [-r <seed>] [-c] [-l]");
     }
     let mut distance_matrix = vec![vec![0; size]; size];
     fill_graph(&mut distance_matrix, density, seed, allow_loops, is_directed);
