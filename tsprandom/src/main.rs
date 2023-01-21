@@ -15,6 +15,7 @@ use tsptools::{
 };
 
 use plotly::{Plot, Scatter, common::Mode};
+mod simpleparser;
 
 type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize>, i32);
 
