@@ -14,12 +14,9 @@ use tsptools::{
     parsers::parse_tsp_file,
 };
 
+use plotters::prelude::*;
+
 mod simpleparser;
-use plotly::{
-    common::{Mode, Title},
-    layout::Axis,
-    Layout, Plot, Scatter,
-};
 
 type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize>, i32);
 
@@ -244,17 +241,41 @@ fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>, alg_name: &str
 }
 
 fn plot_corr(distances: &Vec<u64>, height_diff: &Vec<u64>, alg_name: &str) {
-    let layout = Layout::new()
-        .x_axis(Axis::new().title(Title::new("Distance from best solution")))
-        .y_axis(Axis::new().title(Title::new("Difference from best solution")));
-
-    let mut plot = Plot::new();
-    let trace = Scatter::new(distances.to_vec(), height_diff.to_vec()).mode(Mode::Markers);
-    plot.add_trace(trace);
-    plot.set_layout(layout);
-    plot.use_local_plotly();
-
     let dt = chrono::offset::Local::now().to_string();
-    let path = format!("{}_corr_{}.html", alg_name, dt);
-    plot.write_html(path);
+    let path = format!("{}_corr_{}.png", alg_name, dt);
+    let root_area = BitMapBackend::new(&path, (800, 400)).into_drawing_area();
+    root_area.fill(&WHITE).unwrap();
+
+    let max_height = height_diff[height_diff.len() - 1] + 100;
+    let max_dist = *distances.iter().max().unwrap() + 2;
+    let mut min_dist = *distances.iter().min().unwrap();
+
+    if min_dist >= 2{
+        min_dist -= 2;
+    }
+
+    let x_range = min_dist..max_dist as u64;
+    let y_range = 0..max_height as u64;
+
+    let mut ctx = ChartBuilder::on(&root_area)
+        .set_label_area_size(LabelAreaPosition::Left, 40)
+        .set_label_area_size(LabelAreaPosition::Bottom, 40)
+        .build_cartesian_2d(x_range, y_range)
+        .unwrap();
+
+    ctx.configure_mesh()
+        .x_desc("Distance form best solution (in pair swaps)")
+        .y_desc("Path length difference from best solution")
+        .draw()
+        .unwrap();
+
+    ctx.draw_series(
+        distances
+            .iter()
+            .zip(height_diff)
+            .map(|(x, y)| Circle::new((*x, *y), 5, &BLUE)),
+    )
+    .unwrap();
+
+    root_area.present().unwrap();
 }

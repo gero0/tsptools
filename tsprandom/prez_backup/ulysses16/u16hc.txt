@@ -1,9 +1,0 @@
-4 threads available
-Calculating stats
-Plotting...
-Mean distance:11, Mean height difference:1161
-std dev. of distance:2.23606797749979, std dev. of height diff:506.719843700639
-Covariance: 324
-Correlation:0.28595131361697573
-Saving results...
-Plot saved!
