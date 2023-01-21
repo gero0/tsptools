@@ -13,7 +13,7 @@ fn fill_graph(distance_matrix:  &mut Vec<Vec<i32>>, density: f64, seed: Option<u
             for col in 0..distance_matrix[row].len() {
                 if col != row {
                     distance_matrix[row][col] = Uniform::from(1..100).sample(&mut rng);
-                    if is_directed {
+                    if !is_directed {
                         distance_matrix[col][row] = distance_matrix[row][col];
                     }
                 } else if allow_loops {
@@ -50,7 +50,7 @@ fn main() {
     let mut opts = getopt::Parser::new(&args, "s:d:r:clo:h");
     
     let mut size = 0;
-    let mut density = 0.0;
+    let mut density = 1.0;
     let mut seed: Option<u64> = None;
     let mut allow_loops = false;
     let mut is_directed = false;
@@ -74,11 +74,11 @@ fn main() {
         }
     }
     if help {
-        println!("Usage: tspgen -s <size> -d <density> [-r <seed>] [-c] [-l]");
+        println!("Usage: tspgen -s <size> [-d <density>] [-r <seed>] [-c] [-l]");
         return;
     }
-    if size == 0 || density == 0.0 {
-        panic!("Usage: tspgen -s <size> -d <density> [-r <seed>] [-c] [-l]");
+    if size == 0 {
+        panic!("Usage: tspgen -s <size> [-d <density>] [-r <seed>] [-c] [-l]");
     }
     let mut distance_matrix = vec![vec![0; size]; size];
     fill_graph(&mut distance_matrix, density, seed, allow_loops, is_directed);
