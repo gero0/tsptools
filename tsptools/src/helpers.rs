@@ -101,14 +101,14 @@ pub fn to_rad(x: f32) -> f32 {
     pi * (deg as f32 + 5.0 * min / 3.0) / 180.0
 }
 
-pub fn tour_len(path: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>) -> i32 {
-    let len: i32 = path.windows(2).map(|w| distance_matrix[w[0]][w[1]]).sum();
-    len + distance_matrix[path[0]][path[path.len() - 1]]
+pub fn tour_len(path: &Vec<u16>, distance_matrix: &Vec<Vec<i32>>) -> i32 {
+    let len: i32 = path.windows(2).map(|w| distance_matrix[w[0] as usize][w[1] as usize]).sum();
+    len + distance_matrix[path[0] as usize][path[path.len() - 1] as usize]
 }
 
-pub fn random_solution(node_count: usize, seed: Option<u64>, preserve_first: bool) -> Vec<usize> {
+pub fn random_solution(node_count: u16, seed: Option<u64>, preserve_first: bool) -> Vec<u16> {
     let (mut nodes_remaining, mut path) = if preserve_first {
-        ((1..node_count).collect::<Vec<usize>>(), vec![0])
+        ((1..node_count).collect::<Vec<u16>>(), vec![0])
     } else {
         ((0..node_count).collect(), vec![])
     };
@@ -132,25 +132,25 @@ pub fn nodes_to_ids(path: &[Node]) -> Vec<usize> {
     return path.iter().map(|node| node.pos).collect();
 }
 
-pub fn cmp_permutations(perm1: &[usize], perm2: &[usize]) -> u32 {
+pub fn cmp_permutations(perm1: &[u16], perm2: &[u16]) -> u32 {
     //invert first permutation
     let mut perm_1_inv = perm1.to_owned();
     for i in 0..perm1.len() {
-        perm_1_inv[perm1[i]] = i;
+        perm_1_inv[perm1[i] as usize] = i as u16;
     }
 
     //Compose the two permutations
     let mut p = vec![0; perm1.len()];
     for i in 0..perm1.len() {
-        p[i] = perm2[perm_1_inv[i]];
+        p[i] = perm2[perm_1_inv[i] as usize];
     }
 
     let mut count = 0;
     for i in 0..perm1.len() {
-        while p[i] != i {
-            let a = p[p[i]];
+        while p[i] != i as u16 {
+            let a = p[p[i] as usize];
             let b = p[i];
-            p.swap(a, b);
+            p.swap(a.into(), b.into());
             count += 1;
         }
     }

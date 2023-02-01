@@ -1,11 +1,19 @@
 use crate::helpers::{random_solution, tour_len};
 
-pub fn hillclimb_rand(distance_matrix: &Vec<Vec<i32>>, seed: Option<u64>, preserve_first: bool) -> (Vec<usize>, i32) {
-    let random_tour = random_solution(distance_matrix.len(), seed, preserve_first);
+pub fn hillclimb_rand(
+    distance_matrix: &Vec<Vec<i32>>,
+    seed: Option<u64>,
+    preserve_first: bool,
+) -> (Vec<u16>, i32) {
+    let random_tour = random_solution(distance_matrix.len() as u16, seed, preserve_first);
     hillclimb(&random_tour, distance_matrix, preserve_first)
 }
 
-pub fn hillclimb(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>, preserve_first: bool) -> (Vec<usize>, i32) {
+pub fn hillclimb(
+    starting_tour: &Vec<u16>,
+    distance_matrix: &Vec<Vec<i32>>,
+    preserve_first: bool,
+) -> (Vec<u16>, i32) {
     let mut current_tour = starting_tour.clone();
     let mut current_len = tour_len(&current_tour, distance_matrix);
 
@@ -23,7 +31,7 @@ pub fn hillclimb(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>, pr
     (current_tour, current_len)
 }
 
-fn get_neighbors(path: &Vec<usize>, preserve_first: bool) -> Vec<Vec<usize>> {
+fn get_neighbors(path: &Vec<u16>, preserve_first: bool) -> Vec<Vec<u16>> {
     let mut neighbors = vec![];
 
     let start = match preserve_first {
@@ -43,9 +51,9 @@ fn get_neighbors(path: &Vec<usize>, preserve_first: bool) -> Vec<Vec<usize>> {
 }
 
 fn get_best_neighbor(
-    neighbors: &Vec<Vec<usize>>,
+    neighbors: &Vec<Vec<u16>>,
     distance_matrix: &Vec<Vec<i32>>,
-) -> (Vec<usize>, i32) {
+) -> (Vec<u16>, i32) {
     let mut best_len = tour_len(&neighbors[0], distance_matrix);
     let mut best_neighbor_index = 0;
 

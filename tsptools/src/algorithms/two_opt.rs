@@ -1,11 +1,19 @@
 use crate::helpers::*;
 
-pub fn two_opt_random(distance_matrix: &Vec<Vec<i32>>, seed: Option<u64>, preserve_first:bool) -> (Vec<usize>, i32) {
-    let starting_tour = random_solution(distance_matrix.len(), seed, preserve_first);
+pub fn two_opt_random(
+    distance_matrix: &Vec<Vec<i32>>,
+    seed: Option<u64>,
+    preserve_first: bool,
+) -> (Vec<u16>, i32) {
+    let starting_tour = random_solution(distance_matrix.len() as u16, seed, preserve_first);
     two_opt(&starting_tour, distance_matrix, preserve_first)
 }
 
-pub fn two_opt(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>, preserve_first:bool) -> (Vec<usize>, i32) {
+pub fn two_opt(
+    starting_tour: &Vec<u16>,
+    distance_matrix: &Vec<Vec<i32>>,
+    preserve_first: bool,
+) -> (Vec<u16>, i32) {
     let mut tour = starting_tour.to_owned();
     let n = tour.len();
     let mut improvement = true;
@@ -23,10 +31,10 @@ pub fn two_opt(starting_tour: &Vec<usize>, distance_matrix: &Vec<Vec<i32>>, pres
 
         for i in start..(n - 1) {
             for j in (i + 1)..n {
-                let distance = distance_matrix[tour[i]][tour[j]]
-                    + distance_matrix[tour[i + 1]][tour[(j + 1) % n]]
-                    - distance_matrix[tour[i]][tour[i + 1]]
-                    - distance_matrix[tour[j]][tour[(j + 1) % n]];
+                let distance = distance_matrix[tour[i] as usize][tour[j] as usize]
+                    + distance_matrix[tour[i + 1] as usize][tour[(j + 1) % n] as usize]
+                    - distance_matrix[tour[i] as usize][tour[i + 1] as usize]
+                    - distance_matrix[tour[j] as usize][tour[(j + 1) % n] as usize];
 
                 if distance < min_dist {
                     min_dist = distance;

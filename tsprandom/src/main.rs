@@ -18,7 +18,7 @@ use plotters::prelude::*;
 
 mod simpleparser;
 
-type HillclimbFunction = dyn Fn(&Vec<usize>, &Vec<Vec<i32>>, bool) -> (Vec<usize>, i32);
+type HillclimbFunction = dyn Fn(&Vec<u16>, &Vec<Vec<i32>>, bool) -> (Vec<u16>, i32);
 
 fn main() {
     let path = env::args().nth(1).expect("No path to input data given!");
@@ -48,7 +48,7 @@ fn main() {
 
     let samples_per_thread = sample_count / thread_count;
 
-    let local_minimums = Mutex::new(FxHashMap::<Vec<usize>, (i32, i32)>::default());
+    let local_minimums = Mutex::new(FxHashMap::<Vec<u16>, (i32, i32)>::default());
     let visited_starting = Mutex::new(FxHashSet::default());
 
     thread::scope(|s| {
@@ -103,8 +103,8 @@ fn sample(
     sample_count: usize,
     max_retries: usize,
     distance_matrix: &Vec<Vec<i32>>,
-    local_minimums: &Mutex<FxHashMap<Vec<usize>, (i32, i32)>>,
-    visited_starting: &Mutex<FxHashSet<Vec<usize>>>,
+    local_minimums: &Mutex<FxHashMap<Vec<u16>, (i32, i32)>>,
+    visited_starting: &Mutex<FxHashSet<Vec<u16>>>,
     hc: &HillclimbFunction,
 ) {
     for _ in 0..sample_count {
@@ -130,15 +130,15 @@ fn sample(
 }
 
 fn find_starting_point(
-    visited_starting: &Mutex<FxHashSet<Vec<usize>>>,
+    visited_starting: &Mutex<FxHashSet<Vec<u16>>>,
     distance_matrix: &Vec<Vec<i32>>,
     max_retries: usize,
-) -> Option<Vec<usize>> {
+) -> Option<Vec<u16>> {
     let mut visited_set = visited_starting
         .lock()
         .expect("Mutex poisoned, bailing out!");
 
-    let mut starting_solution = random_solution(distance_matrix.len(), None, true);
+    let mut starting_solution = random_solution(distance_matrix.len() as u16, None, true);
     let mut retries = 0;
     while visited_set.contains(&starting_solution) {
         retries += 1;
@@ -146,7 +146,7 @@ fn find_starting_point(
             //can't find any new starting points, end thread
             return None;
         }
-        starting_solution = random_solution(distance_matrix.len(), None, true);
+        starting_solution = random_solution(distance_matrix.len() as u16, None, true);
     }
 
     visited_set.insert(starting_solution.clone());
@@ -155,8 +155,8 @@ fn find_starting_point(
 }
 
 fn save_results(
-    local_minimums: &Vec<(Vec<usize>, i32, i32)>,
-    visited_starting: &FxHashSet<Vec<usize>>,
+    local_minimums: &Vec<(Vec<u16>, i32, i32)>,
+    visited_starting: &FxHashSet<Vec<u16>>,
     alg_name: &str,
 ) {
     let dt = chrono::offset::Local::now().to_string();
@@ -197,7 +197,7 @@ fn save_results(
     }
 }
 
-fn calculcate_stats(local_minimums: &Vec<(Vec<usize>, i32, i32)>, alg_name: &str) {
+fn calculcate_stats(local_minimums: &Vec<(Vec<u16>, i32, i32)>, alg_name: &str) {
     //calculate distances from node to best node and height differences between them
     let mut distances = vec![0; local_minimums.len() - 1];
     let mut height_diff = vec![0; local_minimums.len() - 1];
